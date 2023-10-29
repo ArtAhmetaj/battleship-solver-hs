@@ -8,7 +8,7 @@ type Grid = [[GridCell]]
 
 
 initializeGrid :: Int -> Int -> Grid
-initializeGrid width height = replicate height (replicate width GridCell {state=NotHit, value=0})
+initializeGrid width height = replicate height (replicate width GridCell {state=Unknown, value=0})
 
 
 
