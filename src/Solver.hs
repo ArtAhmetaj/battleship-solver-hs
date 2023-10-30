@@ -44,7 +44,7 @@ incHorizontally grid v = map (`incRow` v) grid
     where incRow = increaseProbabilityHorizontallyRow
 
 incVertically :: [[GridCell]] -> Int -> [[GridCell]]
-incVertically grid v = map (`incRow` v) $ transpose grid
+incVertically grid v =  transpose $ map (`incRow` v) $ transpose grid
     where incRow = increaseProbabilityHorizontallyRow
 
 
