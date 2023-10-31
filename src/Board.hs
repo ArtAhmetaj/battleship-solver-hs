@@ -53,6 +53,7 @@ blockInShip curr ship = (mapIfHit curr ship, any (hasHitBlock curr) ship)
         mapIfHit c = map (\t -> if hasHitBlock c t then mapFromCurrBlock t else t)
 
 
+
 hitShip :: BlockPosition -> [Ship] -> ([Ship], Bool)
 hitShip position ships = addShips $ map (blockInShip position) ships
   where
@@ -60,13 +61,15 @@ hitShip position ships = addShips $ map (blockInShip position) ships
     addShips [] = ([], False)  -- No ships were modified
     addShips ((ship, modified):rest) =
       let (otherShips, otherModified) = addShips rest
-       in (ship : otherShips, modified && otherModified)
+       in (ship : otherShips, modified || otherModified)
 
 hitBoard :: GameBoard -> BlockPosition -> GameBoard
 hitBoard board position = GameBoard { matrix = matrixResult, ships = updatedShips }
     where
         (updatedShips, didHit) = hitShip position (ships board)
-        matrixResult = if didHit then updateMatrix (matrix board) Hit position else matrix board
+        matrixResult = updateMatrix (matrix board) (valueToHit didHit) position
+        valueToHit True = Hit
+        valueToHit False = NotHit
 
 
 generateRandomPosition :: Int ->  IO BlockPosition
