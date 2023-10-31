@@ -1,7 +1,10 @@
-module Board (generateGameBoard) where
+module Board (generateGameBoard,hitBoard) where
 
 import System.Random ( randomRIO )
 import Control.Monad (foldM)
+import Data.List (mapAccumL)
+import Data.Foldable (Foldable(fold))
+
 
 data BlockState = Hit | NotHit | Unknown deriving (Show,Eq)
 
@@ -27,6 +30,44 @@ generateMatrixPerBoard maxX maxY = replicate maxY (replicate maxX NotHit)
 shipsByLength :: [Int]
 shipsByLength = [2,2,3,3,4,4,5,5]
 -- There are usually 10 ships. 2 destroyers of length 2, 2 cruisers and submarines of length 3, 2 battleships of length 4, and 2 carriers of length 5.
+
+isShipDead :: Ship -> Bool
+isShipDead = all (\t -> hit t == Hit)
+
+areAllShipsDead :: GameBoard -> Bool
+areAllShipsDead board = all isShipDead $ ships board
+
+
+updateMatrix :: Matrix -> BlockState ->  BlockPosition -> Matrix
+updateMatrix m x (r,c) =
+  take r m ++
+  [take c (m !! r) ++ [x] ++ drop (c + 1) (m !! r)] ++
+  drop (r + 1) m
+
+
+blockInShip :: BlockPosition -> Ship -> (Ship, Bool)
+blockInShip curr ship = (mapIfHit curr ship, any (hasHitBlock curr) ship)
+    where
+        hasHitBlock c p = c == position p
+        mapFromCurrBlock block = BlockWithPosition { position = position block, hit = Hit }
+        mapIfHit c = map (\t -> if hasHitBlock c t then mapFromCurrBlock t else t)
+
+
+hitShip :: BlockPosition -> [Ship] -> ([Ship], Bool)
+hitShip position ships = addShips $ map (blockInShip position) ships
+  where
+    addShips :: [(Ship, Bool)] -> ([Ship], Bool)
+    addShips [] = ([], False)  -- No ships were modified
+    addShips ((ship, modified):rest) =
+      let (otherShips, otherModified) = addShips rest
+       in (ship : otherShips, modified && otherModified)
+
+hitBoard :: GameBoard -> BlockPosition -> GameBoard
+hitBoard board position = GameBoard { matrix = matrixResult, ships = updatedShips }
+    where
+        (updatedShips, didHit) = hitShip position (ships board)
+        matrixResult = if didHit then updateMatrix (matrix board) Hit position else matrix board
+
 
 generateRandomPosition :: Int ->  IO BlockPosition
 generateRandomPosition maxValue = mapM (\_ -> randomRIO (0,maxValue))  (0,1)
@@ -59,6 +100,13 @@ checkBlockIntersection ship block =
 
 addShiptoBoard :: GameBoard -> Ship ->  IO GameBoard
 addShiptoBoard b sh = return  b { ships = sh : ships b }
+
+
+
+
+registerHit :: GameBoard -> BlockPosition -> GameBoard
+registerHit = error "unimplemented"
+
 
 generateShipPerBoard :: GameBoard -> ShipSize -> IO GameBoard
 generateShipPerBoard board size = do

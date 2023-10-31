@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Solver(getProbabilityPerBoardState,initializeGrid)
+import Board(generateGameBoard,hitBoard)
 
 main :: IO ()
 main = do
-    let result =  getProbabilityPerBoardState (initializeGrid 10 10) [2,2,3,3,4,4,5,5]
-    putStrLn $ show result
+    board <- generateGameBoard 10 10
+    print (hitBoard board (0,0))
