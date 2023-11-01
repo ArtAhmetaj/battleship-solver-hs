@@ -1,14 +1,29 @@
-module Board (generateGameBoard,hitBoard) where
+module Board (
+    generateGameBoard,
+    hitBoard,
+    BlockState (Hit, NotHit, Unknown),
+    BlockPosition,
+    BlockWithPosition,
+    GameBoard,
+    Matrix,
+    Ship,
+    Orientation (Horizontal, Vertical),
+    ShipSize,
+    matrix,
+    shipsByLength,
+    areAllShipsDead,
+    ships
+) where
 
 import System.Random ( randomRIO )
 import Control.Monad (foldM)
-import Data.List (mapAccumL)
-import Data.Foldable (Foldable(fold))
+import Debug.Trace (trace)
 
 
 data BlockState = Hit | NotHit | Unknown deriving (Show,Eq)
 
 type BlockPosition = (Int, Int)
+
 
 data BlockWithPosition = BlockWithPosition {position :: BlockPosition, hit :: BlockState} deriving (Show,Eq)
 
@@ -25,7 +40,7 @@ data GameBoard = GameBoard {matrix :: Matrix, ships :: [Ship]} deriving (Show,Eq
 
 
 generateMatrixPerBoard :: Int -> Int -> Matrix
-generateMatrixPerBoard maxX maxY = replicate maxY (replicate maxX NotHit)
+generateMatrixPerBoard maxX maxY = replicate maxY (replicate maxX Unknown)
 
 shipsByLength :: [Int]
 shipsByLength = [2,2,3,3,4,4,5,5]
@@ -36,6 +51,8 @@ isShipDead = all (\t -> hit t == Hit)
 
 areAllShipsDead :: GameBoard -> Bool
 areAllShipsDead board = all isShipDead $ ships board
+
+
 
 
 updateMatrix :: Matrix -> BlockState ->  BlockPosition -> Matrix
@@ -58,7 +75,7 @@ hitShip :: BlockPosition -> [Ship] -> ([Ship], Bool)
 hitShip position ships = addShips $ map (blockInShip position) ships
   where
     addShips :: [(Ship, Bool)] -> ([Ship], Bool)
-    addShips [] = ([], False)  -- No ships were modified
+    addShips [] = ([], False) 
     addShips ((ship, modified):rest) =
       let (otherShips, otherModified) = addShips rest
        in (ship : otherShips, modified || otherModified)
@@ -103,12 +120,6 @@ checkBlockIntersection ship block =
 
 addShiptoBoard :: GameBoard -> Ship ->  IO GameBoard
 addShiptoBoard b sh = return  b { ships = sh : ships b }
-
-
-
-
-registerHit :: GameBoard -> BlockPosition -> GameBoard
-registerHit = error "unimplemented"
 
 
 generateShipPerBoard :: GameBoard -> ShipSize -> IO GameBoard

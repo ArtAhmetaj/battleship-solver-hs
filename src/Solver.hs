@@ -1,14 +1,26 @@
-module Solver (getProbabilityPerBoardState,initializeGrid) where
+module Solver (getProbabilityPerBoardState,getProbabibilityGridFromBoard,mergeMatrix,getMostProbableHit,GridCell(..),Grid) where
+-- a shared type file proably
+import Board (BlockState (Hit, NotHit, Unknown), ShipSize,GameBoard,matrix, BlockPosition)
 
--- duplicated types will see what i do about it later
-type ShipSize = Int
-data CellState = Hit | NotHit | Unknown deriving (Show,Eq)
-data GridCell = GridCell {state::CellState, value::Int} deriving (Show,Eq)
+data GridCell = GridCell {state::BlockState, value::Int} deriving (Show,Eq)
 type Grid = [[GridCell]]
+type MaxEntry = (Int,(Int,Int))
 
 
-initializeGrid :: Int -> Int -> Grid
-initializeGrid width height = replicate height (replicate width GridCell {state=Unknown, value=0})
+
+   
+ 
+
+instance Ord GridCell where
+    compare (GridCell _ value1) (GridCell _ value2)
+        | value1 < value2 = LT
+        | value1 > value2 = GT
+        | otherwise       = EQ
+
+
+getProbabibilityGridFromBoard :: GameBoard -> Grid
+getProbabibilityGridFromBoard board =  map (map mappedBlock) (matrix board)
+    where mappedBlock block = GridCell{state=block,value=0}
 
 
 
@@ -18,15 +30,25 @@ transpose ([]:_) = []
 transpose x = map head x : transpose (map tail x)
 
 
+-- this is horrible with time complexity but I do not know enough haskell for now lol
+getMostProbableHit :: Grid -> BlockPosition
+getMostProbableHit grid = snd  $ getBiggestEntry (minBound::Int, (-1,-1)) flattenedEntries
+    where flattenedEntries = [ (value cellValue, (i, j))
+                            | (i, row) <- zip [0..] grid
+                            , (j, cellValue) <- zip [0..] row,
+                            state cellValue == Unknown
+                        ]
+          getBiggestEntry::MaxEntry -> [MaxEntry] -> MaxEntry              
+          getBiggestEntry maxEntry [] =  maxEntry
+          getBiggestEntry currentEntry (x:xs)
+            | fst currentEntry >= fst x  = getBiggestEntry currentEntry xs 
+            | fst currentEntry < fst x = getBiggestEntry x xs   
+            | otherwise = getBiggestEntry x xs 
 
--- increaseBy2 :: [Int] -> [Int]
--- increaseBy2 [] = []  -- Base case: an empty list results in an empty list.
--- increaseBy2 (x:y:rest) = (x+1) : (y+1) : increaseBy2 rest
--- increaseBy2 (x:rest) = [x]  -- Handle the case where there's only one element left.    
 
 increaseIfNoHits :: [GridCell] -> [GridCell]
 increaseIfNoHits cells
-  | notHitInRange   = cells
+  | notHitInRange = cells 
   | anyHitInRange =   [x { value = value x + 2, state=NotHit } | x <- cells]
   | otherwise = [x { value = value x + 1, state=NotHit } | x <- cells]
   where notHitInRange = any (\x -> state x == NotHit) cells
@@ -48,23 +70,24 @@ incVertically grid v =  transpose $ map (`incRow` v) $ transpose grid
     where incRow = increaseProbabilityHorizontallyRow
 
 
-merge :: [a] -> [a] -> [a]
-merge xs     []     = xs
-merge []     ys     = ys
-merge (x:xs) (y:ys) = x : y : merge xs ys
+mergeMatrix :: Grid -> Grid -> Grid
+mergeMatrix grid1 grid2 =
+    [ [ combineCells cell1 cell2 | (cell1, cell2) <- zip row1 row2 ]
+    | (row1, row2) <- zip grid1 grid2
+    ]
 
-mergeMatrix :: [[a]] -> [[a]] -> [[a]]
-mergeMatrix  xs [] = xs
-mergeMatrix [] ys = ys
-mergeMatrix (x:xs) (y:ys) = merge x y  : merge xs ys
+-- Combine two cells by adding value from the first cell and preserving the state
+combineCells :: GridCell -> GridCell -> GridCell
+combineCells (GridCell state1 value1) (GridCell _ value2) = GridCell state1 (value1 + value2)
 
 
-getProbabilityPerShip :: [[GridCell]] -> ShipSize -> [[GridCell]]
+
+getProbabilityPerShip :: Grid -> ShipSize -> Grid
 getProbabilityPerShip grid size=  mergeMatrix horizontal vertical
     where horizontal = incHorizontally grid size
           vertical =  incVertically grid size
 
 
-getProbabilityPerBoardState :: [[GridCell]] -> [ShipSize] -> [[GridCell]]
+getProbabilityPerBoardState :: Grid -> [ShipSize] -> Grid
 getProbabilityPerBoardState initial sizes = foldl mergeMatrix initial probabilityGrids
   where probabilityGrids = map (getProbabilityPerShip initial) sizes
