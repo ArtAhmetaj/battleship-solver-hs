@@ -1,28 +1,30 @@
 module Main (main) where
 
-import Board (BlockPosition, GameBoard, areAllShipsDead, generateGameBoard, hitBoard, matrix, ships, shipsByLength)
-import Data.Foldable (Foldable (fold, foldl'))
-import Solver (Grid, GridCell (..), getProbabibilityGridFromBoard,getMostProbableHit, getProbabibilityGridFromBoard, getProbabilityPerBoardState, mergeMatrix)
+import Board (BlockPosition, GameBoard, areAllShipsDead, generateGameBoard, hitBoard, shipsByLength)
+import Solver (getMostProbableHit, getProbabibilityGridFromBoard, getProbabilityPerBoardState)
 import Text.Printf (printf)
 
 main :: IO ()
 main = do
-  board <- generateGameBoard 10 10
-  --   lets start with middle of board
-  let middleSpot = (5,5)
-  gameLoop board middleSpot 0
+  board <- Board.generateGameBoard 10 10
+  initialMove <- calculateMove board
+  gameLoop board initialMove 0
 
-gameLoop :: GameBoard -> BlockPosition -> Int -> IO ()
+calculateMove :: Board.GameBoard -> IO Board.BlockPosition
+calculateMove board = do
+  let gridCell = getProbabibilityGridFromBoard board
+  let calculatedGrid = getProbabilityPerBoardState gridCell Board.shipsByLength
+  let newEntryToHit = getMostProbableHit calculatedGrid
+  return newEntryToHit
+
+gameLoop :: Board.GameBoard -> Board.BlockPosition -> Int -> IO ()
 gameLoop board positionToHit tries = do
-  let newBoard = hitBoard board positionToHit
-  if areAllShipsDead newBoard
-    then printf "Congratulations you have sunk all the ships in %d tries" tries
+  let newBoard = Board.hitBoard board positionToHit
+  let newTries = tries + 1
+  if Board.areAllShipsDead newBoard
+    then do
+      printf "Congratulations, you have sunk all the ships in %d tries" newTries
+      
     else do
-      let gridCell = getProbabibilityGridFromBoard newBoard
-      let calculatedGrid = getProbabilityPerBoardState gridCell shipsByLength
-      let newEntryToHit = getMostProbableHit calculatedGrid
-      print newEntryToHit
-      print tries
-      print $ ships board 
-      gameLoop newBoard newEntryToHit (tries + 1)
-
+      move <- calculateMove newBoard
+      gameLoop newBoard move newTries
