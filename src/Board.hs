@@ -17,7 +17,6 @@ module Board (
 
 import System.Random ( randomRIO )
 import Control.Monad (foldM)
-import Debug.Trace (trace)
 
 
 data BlockState = Hit | NotHit | Unknown deriving (Show,Eq)
@@ -51,8 +50,6 @@ isShipDead = all (\t -> hit t == Hit)
 
 areAllShipsDead :: GameBoard -> Bool
 areAllShipsDead board = all isShipDead $ ships board
-
-
 
 
 updateMatrix :: Matrix -> BlockState ->  BlockPosition -> Matrix
@@ -104,13 +101,12 @@ fits :: Int -> Orientation -> BlockPosition -> Int -> Bool
 fits mv o p size
   | o == Horizontal = mv - fst p >= size
   | o == Vertical =  mv - snd p >= size
-  | otherwise = error "Should never be caught"
+  | otherwise = error "Value should never happen"
 
 
 shipIntersects :: [Ship] -> Ship -> Bool
 shipIntersects existingShips newShip =
     any (any (checkBlockIntersection newShip)) existingShips
-
 
 
 checkBlockIntersection :: Ship -> BlockWithPosition -> Bool

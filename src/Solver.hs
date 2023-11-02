@@ -1,6 +1,19 @@
-module Solver (getProbabilityPerBoardState,getProbabibilityGridFromBoard,mergeMatrix,getMostProbableHit,GridCell(..),Grid,getProbabibilityGridFromBoard) where
--- a shared type file proably
-import Board (BlockState (Hit, NotHit, Unknown), ShipSize,GameBoard,matrix, BlockPosition)
+module Solver (
+    getProbabilityPerBoardState,
+    getProbabilityGridFromBoard,
+    mergeMatrix,
+    getMostProbableHit,
+    GridCell(..),
+    Grid,
+) where
+
+-- a shared type file probably
+import Board (
+    BlockState (Hit, NotHit, Unknown),
+    ShipSize,
+    GameBoard,
+    matrix,
+    BlockPosition)
 
 data GridCell = GridCell {state::BlockState, value::Int} deriving (Show,Eq)
 type Grid = [[GridCell]]
@@ -12,13 +25,6 @@ instance Ord GridCell where
         | value1 < value2 = LT
         | value1 > value2 = GT
         | otherwise       = EQ
-
-
-getProbabibilityGridFromBoard :: GameBoard -> Grid
-getProbabibilityGridFromBoard board =  map (map mappedBlock) (matrix board)
-    where mappedBlock block = GridCell{state=block,value=0}
-
-
 
 
 transpose:: [[a]]->[[a]]
@@ -72,7 +78,6 @@ mergeMatrix grid1 grid2 =
     | (row1, row2) <- zip grid1 grid2
     ]
 
--- Combine two cells by adding value from the first cell and preserving the state
 combineCells :: GridCell -> GridCell -> GridCell
 combineCells (GridCell state1 value1) (GridCell _ value2) = GridCell state1 (value1 + value2)
 
