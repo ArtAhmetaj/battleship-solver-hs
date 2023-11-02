@@ -75,7 +75,7 @@ hitShip :: BlockPosition -> [Ship] -> ([Ship], Bool)
 hitShip position ships = addShips $ map (blockInShip position) ships
   where
     addShips :: [(Ship, Bool)] -> ([Ship], Bool)
-    addShips [] = ([], False) 
+    addShips [] = ([], False)
     addShips ((ship, modified):rest) =
       let (otherShips, otherModified) = addShips rest
        in (ship : otherShips, modified || otherModified)
@@ -90,7 +90,7 @@ hitBoard board position = GameBoard { matrix = matrixResult, ships = updatedShip
 
 
 generateRandomPosition :: Int ->  IO BlockPosition
-generateRandomPosition maxValue = mapM (\_ -> randomRIO (0,maxValue))  (0,1)
+generateRandomPosition maxValue = mapM (\_ -> randomRIO (0,maxValue-1))  (0,1)
 
 generateRandomOrientation :: IO Orientation
 generateRandomOrientation =  intToBool <$> randomRIO (0,1)

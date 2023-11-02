@@ -1,47 +1,33 @@
 module Main (main) where
 
-import Board(generateGameBoard,hitBoard,shipsByLength,GameBoard,areAllShipsDead,ships,matrix,BlockPosition)
-import Solver(getProbabilityPerBoardState,getProbabibilityGridFromBoard,mergeMatrix,getMostProbableHit,GridCell(..),Grid)
-import Data.Foldable (Foldable(fold, foldl'))
-
+import Board (BlockPosition, GameBoard, areAllShipsDead, generateGameBoard, hitBoard, matrix, ships, shipsByLength)
+import Data.Foldable (Foldable (fold, foldl'))
+import Solver (Grid, GridCell (..), getMostProbableHit, getProbabibilityGridFromBoard, getProbabilityPerBoardState, mergeMatrix)
+import Text.Printf (printf)
 
 main :: IO ()
 main = do
-    board <- generateGameBoard 10 10
-    gameLoop board
+  board <- generateGameBoard 10 10
+  --   lets start with middle of board
+  let middleSpot = (5,5)
+  gameLoop board middleSpot 0
 
-gameLoop :: GameBoard -> IO ()
-gameLoop board = do
-    putStrLn "Enter the coordinates for your shot (row, column):"
-    input <- getLine
-    let coordinates = parseInput input
-    case coordinates of
-        Just (row, col) -> do
-            let positionToHit = (row, col)
-            let newBoard = hitBoard board positionToHit
-            printShipsState newBoard
-            let gridCell = getProbabilityGridFromBoard newBoard
-            let calculatedGrid = getProbabilityPerBoardState gridCell shipsByLength
-            print "Predicted Value for the Next Block:"
-            print $ getMostProbableHit calculatedGrid
-            if areAllShipsDead newBoard
-                then putStrLn "Congratulations! You've sunk all the ships!"
-                else gameLoop newBoard
-        Nothing -> do
-            putStrLn "Invalid input. Please enter coordinates in the format 'row, column'."
-            gameLoop board
+gameLoop :: GameBoard -> BlockPosition -> Int -> IO ()
+gameLoop board positionToHit tries = do
+  let newBoard = hitBoard board positionToHit
+  if areAllShipsDead newBoard
+    then printf "Congratulations you have sunk all the ships in %d tries" tries
+    else do
+      let gridCell = getProbabilityGridFromBoard newBoard
+      let calculatedGrid = getProbabilityPerBoardState gridCell shipsByLength
+      let newEntryToHit = getMostProbableHit calculatedGrid
+      print newEntryToHit
+      print tries
+      print $ ships board 
+      gameLoop newBoard newEntryToHit (tries + 1)
 
-parseInput :: String -> Maybe BlockPosition
-parseInput input = case words input of
-    [row, col] -> Just (read row, read col)
-    _ -> Nothing
-
-printShipsState :: GameBoard -> IO ()
-printShipsState board = do
-    putStrLn "Ship States:"
-    mapM_ print (ships board)
-
--- add a maybe type for the value and add nothing here 
+-- add a maybe type for the value and add nothing here
 getProbabilityGridFromBoard :: GameBoard -> Grid
 getProbabilityGridFromBoard board = map (map mappedBlock) (matrix board)
-    where mappedBlock block = GridCell { state = block, value = 0 }
+  where
+    mappedBlock block = GridCell {state = block, value = 0}
