@@ -1,4 +1,4 @@
-module Solver (getProbabilityPerBoardState,getProbabibilityGridFromBoard,mergeMatrix,getMostProbableHit,GridCell(..),Grid) where
+module Solver (getProbabilityPerBoardState,getProbabibilityGridFromBoard,mergeMatrix,getMostProbableHit,GridCell(..),Grid,getProbabibilityGridFromBoard) where
 -- a shared type file proably
 import Board (BlockState (Hit, NotHit, Unknown), ShipSize,GameBoard,matrix, BlockPosition)
 
@@ -6,10 +6,6 @@ data GridCell = GridCell {state::BlockState, value::Int} deriving (Show,Eq)
 type Grid = [[GridCell]]
 type MaxEntry = (Int,(Int,Int))
 
-
-
-   
- 
 
 instance Ord GridCell where
     compare (GridCell _ value1) (GridCell _ value2)
@@ -80,6 +76,11 @@ mergeMatrix grid1 grid2 =
 combineCells :: GridCell -> GridCell -> GridCell
 combineCells (GridCell state1 value1) (GridCell _ value2) = GridCell state1 (value1 + value2)
 
+-- add a maybe type for the value and add nothing here
+getProbabilityGridFromBoard :: GameBoard -> Grid
+getProbabilityGridFromBoard board = map (map mappedBlock) (matrix board)
+  where
+    mappedBlock block = GridCell {state = block, value = 0}
 
 
 getProbabilityPerShip :: Grid -> ShipSize -> Grid
