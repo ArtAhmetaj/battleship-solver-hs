@@ -1,7 +1,7 @@
 module Main (main) where
 
 import Board (BlockPosition, GameBoard, areAllShipsDead, generateGameBoard, hitBoard, shipsByLength)
-import Solver (getMostProbableHit, getProbabibilityGridFromBoard, getProbabilityPerBoardState)
+import Solver (getMostProbableHit, getProbabilityGridFromBoard, getProbabilityPerBoardState)
 import Text.Printf (printf)
 
 main :: IO ()
@@ -12,7 +12,7 @@ main = do
 
 calculateMove :: Board.GameBoard -> IO Board.BlockPosition
 calculateMove board = do
-  let gridCell = getProbabibilityGridFromBoard board
+  let gridCell = getProbabilityGridFromBoard board
   let calculatedGrid = getProbabilityPerBoardState gridCell Board.shipsByLength
   let newEntryToHit = getMostProbableHit calculatedGrid
   return newEntryToHit
